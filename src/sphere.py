@@ -118,12 +118,12 @@ class SphereList(Hittable):
         t0: Float[t.Tensor, "N M"] = t.full_like(discriminant, float("inf"))
         t1: Float[t.Tensor, "N M"] = t.full_like(discriminant, float("inf"))
 
-        t0[valid_discriminant] = (-b[valid_discriminant] - sqrt_discriminant[valid_discriminant]) / denom[
-            valid_discriminant
-        ]
-        t1[valid_discriminant] = (-b[valid_discriminant] + sqrt_discriminant[valid_discriminant]) / denom[
-            valid_discriminant
-        ]
+        t0[valid_discriminant] = (
+            -b[valid_discriminant] - sqrt_discriminant[valid_discriminant]
+        ) / denom[valid_discriminant]
+        t1[valid_discriminant] = (
+            -b[valid_discriminant] + sqrt_discriminant[valid_discriminant]
+        ) / denom[valid_discriminant]
 
         t0_valid: Bool[t.Tensor, "N M"] = (t0 > t_min) & (t0 < t_max)
         t1_valid: Bool[t.Tensor, "N M"] = (t1 > t_min) & (t1 < t_max)
@@ -154,6 +154,8 @@ class SphereList(Hittable):
         record.material_type[sphere_hit_any] = self.material_types[sphere_indices[sphere_hit_any]]
         record.albedo[sphere_hit_any] = self.albedos[sphere_indices[sphere_hit_any]]
         record.fuzz[sphere_hit_any] = self.fuzzes[sphere_indices[sphere_hit_any]]
-        record.refractive_index[sphere_hit_any] = self.refractive_indices[sphere_indices[sphere_hit_any]]
+        record.refractive_index[sphere_hit_any] = self.refractive_indices[
+            sphere_indices[sphere_hit_any]
+        ]
 
         return record

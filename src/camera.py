@@ -81,9 +81,9 @@ class Camera:
     @jaxtyped(typechecker=typechecker)
     def defocus_disk_sample(self, sample: int, h: int, w: int) -> Float[t.Tensor, "sample h w 3"]:
         p: Float[t.Tensor, "sample h w 2"] = random_in_unit_disk((sample, h, w))
-        offset = p[..., 0].unsqueeze(-1) * self.defocus_disk_u.view(1, 1, 1, 3) + p[..., 1].unsqueeze(
-            -1
-        ) * self.defocus_disk_v.view(1, 1, 1, 3)
+        offset = p[..., 0].unsqueeze(-1) * self.defocus_disk_u.view(1, 1, 1, 3) + p[
+            ..., 1
+        ].unsqueeze(-1) * self.defocus_disk_v.view(1, 1, 1, 3)
         return self.look_from.view(1, 1, 1, 3) + offset
 
     @jaxtyped(typechecker=typechecker)
@@ -110,8 +110,12 @@ class Camera:
             if no_hit_mask.any():
                 ray_dirs = F.normalize(rays[no_hit_mask, :, 1], dim=-1)
                 t_param = 0.5 * (ray_dirs[:, 1] + 1.0)
-                background_colors = (1.0 - t_param).unsqueeze(-1) * t.tensor([1.0, 1.0, 1.0], device=device)
-                background_colors += t_param.unsqueeze(-1) * t.tensor([0.5, 0.7, 1.0], device=device)
+                background_colors = (1.0 - t_param).unsqueeze(-1) * t.tensor(
+                    [1.0, 1.0, 1.0], device=device
+                )
+                background_colors += t_param.unsqueeze(-1) * t.tensor(
+                    [0.5, 0.7, 1.0], device=device
+                )
                 colors[no_hit_mask] += attenuation[no_hit_mask] * background_colors
                 active_mask[no_hit_mask] = False
 
@@ -122,7 +126,11 @@ class Camera:
                 material_types_hit = hit_record.material_type[hit_indices]
 
                 # Group indices by material
-                for material_type in [MaterialType.Lambertian, MaterialType.Metal, MaterialType.Dielectric]:
+                for material_type in [
+                    MaterialType.Lambertian,
+                    MaterialType.Metal,
+                    MaterialType.Dielectric,
+                ]:
                     material_mask = material_types_hit == material_type
 
                     if material_mask.any():
@@ -142,16 +150,16 @@ class Camera:
 
                         # Process scattering for each material
                         if material_type == MaterialType.Lambertian:
-                            scatter_mask, mat_attenuation, scattered_rays = Lambertian.scatter_material(
-                                ray_in, sub_hit_record
+                            scatter_mask, mat_attenuation, scattered_rays = (
+                                Lambertian.scatter_material(ray_in, sub_hit_record)
                             )
                         elif material_type == MaterialType.Metal:
                             scatter_mask, mat_attenuation, scattered_rays = Metal.scatter_material(
                                 ray_in, sub_hit_record
                             )
                         elif material_type == MaterialType.Dielectric:
-                            scatter_mask, mat_attenuation, scattered_rays = Dielectric.scatter_material(
-                                ray_in, sub_hit_record
+                            scatter_mask, mat_attenuation, scattered_rays = (
+                                Dielectric.scatter_material(ray_in, sub_hit_record)
                             )
                         attenuation[indices] *= mat_attenuation
                         rays[indices] = scattered_rays
@@ -168,7 +176,9 @@ class Camera:
         if active_mask.any():
             ray_dirs = F.normalize(rays[active_mask, :, 1], dim=-1)
             t_param = 0.5 * (ray_dirs[:, 1] + 1.0)
-            background_colors = (1.0 - t_param).unsqueeze(-1) * t.tensor([1.0, 1.0, 1.0], device=device)
+            background_colors = (1.0 - t_param).unsqueeze(-1) * t.tensor(
+                [1.0, 1.0, 1.0], device=device
+            )
             background_colors += t_param.unsqueeze(-1) * t.tensor([0.5, 0.7, 1.0], device=device)
             colors[active_mask] += attenuation[active_mask] * background_colors
 
@@ -199,7 +209,9 @@ class Camera:
             ray_origin = self.look_from.to(device).view(1, 1, 1, 3).expand(sample, h, w, 3)
         else:
             ray_origin = self.defocus_disk_sample(sample, h, w)
-        directions: Float[t.Tensor, "sample h w 3"] = F.normalize(sampled_pixels - ray_origin, dim=-1)
+        directions: Float[t.Tensor, "sample h w 3"] = F.normalize(
+            sampled_pixels - ray_origin, dim=-1
+        )
 
         pixel_rays: Float[t.Tensor, "sample h w 3 2"] = t.stack([ray_origin, directions], dim=-1)
 
@@ -211,7 +223,9 @@ class Camera:
         colors_flat = t.zeros((N, 3), device=device)
 
         # Process rays in batches
-        for i in tqdm(range(0, N, self.batch_size), total=(N + self.batch_size - 1) // self.batch_size):
+        for i in tqdm(
+            range(0, N, self.batch_size), total=(N + self.batch_size - 1) // self.batch_size
+        ):
             rays_batch = pixel_rays_flat[i : i + self.batch_size]
             colors_batch = self.ray_color(rays_batch, world)
             colors_flat[i : i + self.batch_size] = colors_batch

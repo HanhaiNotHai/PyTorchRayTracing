@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hittable import HitRecord
+
 from enum import IntEnum
 
 import torch as t
@@ -38,7 +39,9 @@ def refract(
 
 
 @jaxtyped(typechecker=typechecker)
-def reflectance(cosine: Float[t.Tensor, "N 1"], ref_idx: Float[t.Tensor, "N 1"]) -> Float[t.Tensor, "N 1"]:
+def reflectance(
+    cosine: Float[t.Tensor, "N 1"], ref_idx: Float[t.Tensor, "N 1"]
+) -> Float[t.Tensor, "N 1"]:
     one = t.tensor(1.0, device=ref_idx.device)
     r0 = ((one - ref_idx) / (one + ref_idx)) ** 2
     return r0 + (one - r0) * (one - cosine) ** 5

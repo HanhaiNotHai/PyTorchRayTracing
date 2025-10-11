@@ -10,7 +10,16 @@ from typeguard import typechecked as typechecker
 class HitRecord:
     @jaxtyped(typechecker=typechecker)
     def __init__(
-        self, hit, point, normal, t, front_face=None, material_type=None, albedo=None, fuzz=None, refractive_index=None
+        self,
+        hit,
+        point,
+        normal,
+        t,
+        front_face=None,
+        material_type=None,
+        albedo=None,
+        fuzz=None,
+        refractive_index=None,
     ):
         self.hit = hit
         self.point = point
@@ -30,7 +39,9 @@ class HitRecord:
     ) -> None:
         """Determines whether the hit is from the outside or inside."""
         self.front_face: Bool[t.Tensor, "..."] = (ray_direction * outward_normal).sum(dim=-1) < 0
-        self.normal: Float[t.Tensor, "... 3"] = t.where(self.front_face.unsqueeze(-1), outward_normal, -outward_normal)
+        self.normal: Float[t.Tensor, "... 3"] = t.where(
+            self.front_face.unsqueeze(-1), outward_normal, -outward_normal
+        )
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
@@ -45,7 +56,9 @@ class HitRecord:
         albedo = t.zeros((*shape, 3), dtype=t.float32, device=device)
         fuzz = t.zeros(shape, dtype=t.float32, device=device)
         refractive_index = t.zeros(shape, dtype=t.float32, device=device)
-        return HitRecord(hit, point, normal, t_values, front_face, material_type, albedo, fuzz, refractive_index)
+        return HitRecord(
+            hit, point, normal, t_values, front_face, material_type, albedo, fuzz, refractive_index
+        )
 
 
 @jaxtyped(typechecker=typechecker)
