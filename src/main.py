@@ -9,9 +9,6 @@ from config import device
 from materials import MaterialType
 from sphere import SphereList
 
-# Choose device
-print(f'Using device: {device}')
-
 
 @jaxtyped(typechecker=typechecker)
 def random_double(min_val=0.0, max_val=1.0):
@@ -294,12 +291,20 @@ def create_cornell_box_scene(max_depth):
     return world, camera
 
 
-# Define scenes to render
-scenes = {'random_spheres': create_random_spheres_scene}
+def main():
+    # Choose device
+    print(f'Using device: {device}')
 
-# Render all scenes
-for scene_name, scene_func in scenes.items():
-    print(f'Rendering {scene_name}...')
-    world, camera = scene_func()
-    image = camera.render(world)
-    image.save(f'image_{scene_name}.png')
+    # Define scenes to render
+    scenes = {'random_spheres': create_random_spheres_scene}
+
+    # Render all scenes
+    for scene_name, scene_func in scenes.items():
+        print(f'Rendering {scene_name}...')
+        world, camera = scene_func()
+        image = camera.render(world)
+        image.save(f'image_{scene_name}.png')
+
+
+if __name__ == '__main__':
+    main()
