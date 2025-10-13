@@ -22,15 +22,15 @@ class MaterialType(IntEnum):
 
 
 @jaxtyped(typechecker=typechecker)
-def reflect(v: Float[t.Tensor, "N 3"], n: Float[t.Tensor, "N 3"]) -> Float[t.Tensor, "N 3"]:
+def reflect(v: Float[t.Tensor, 'N 3'], n: Float[t.Tensor, 'N 3']) -> Float[t.Tensor, 'N 3']:
     # Reflects vector v around normal n
     return v - 2 * (v * n).sum(dim=1, keepdim=True) * n
 
 
 @jaxtyped(typechecker=typechecker)
 def refract(
-    uv: Float[t.Tensor, "N 3"], n: Float[t.Tensor, "N 3"], etai_over_etat: Float[t.Tensor, "N 1"]
-) -> Float[t.Tensor, "N 3"]:
+    uv: Float[t.Tensor, 'N 3'], n: Float[t.Tensor, 'N 3'], etai_over_etat: Float[t.Tensor, 'N 1']
+) -> Float[t.Tensor, 'N 3']:
     one = t.tensor(1.0, device=uv.device)
     cos_theta = t.minimum((-uv * n).sum(dim=1, keepdim=True), one)
     r_out_perp = etai_over_etat * (uv + cos_theta * n)
@@ -40,8 +40,8 @@ def refract(
 
 @jaxtyped(typechecker=typechecker)
 def reflectance(
-    cosine: Float[t.Tensor, "N 1"], ref_idx: Float[t.Tensor, "N 1"]
-) -> Float[t.Tensor, "N 1"]:
+    cosine: Float[t.Tensor, 'N 1'], ref_idx: Float[t.Tensor, 'N 1']
+) -> Float[t.Tensor, 'N 1']:
     one = t.tensor(1.0, device=ref_idx.device)
     r0 = ((one - ref_idx) / (one + ref_idx)) ** 2
     return r0 + (one - r0) * (one - cosine) ** 5
@@ -57,12 +57,12 @@ class Material(ABC):
     @abstractmethod
     @jaxtyped(typechecker=typechecker)
     def scatter_material(
-        r_in: Float[t.Tensor, "* 3 2"],
-        hit_record: "HitRecord",
+        r_in: Float[t.Tensor, '* 3 2'],
+        hit_record: 'HitRecord',
     ) -> tuple[
-        Bool[t.Tensor, "*"],
-        Float[t.Tensor, "* 3"],
-        Float[t.Tensor, "* 3 2"],
+        Bool[t.Tensor, '*'],
+        Float[t.Tensor, '* 3'],
+        Float[t.Tensor, '* 3 2'],
     ]:
         pass
 
@@ -70,18 +70,18 @@ class Material(ABC):
 @jaxtyped(typechecker=typechecker)
 class Lambertian(Material):
     @jaxtyped(typechecker=typechecker)
-    def __init__(self, albedo: Float[t.Tensor, "3"]):
+    def __init__(self, albedo: Float[t.Tensor, '3']):
         self.albedo = albedo.to(device)
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def scatter_material(
-        r_in: Float[t.Tensor, "N 3 2"],
-        hit_record: "HitRecord",
+        r_in: Float[t.Tensor, 'N 3 2'],
+        hit_record: 'HitRecord',
     ) -> tuple[
-        Bool[t.Tensor, "*"],
-        Float[t.Tensor, "* 3"],
-        Float[t.Tensor, "* 3 2"],
+        Bool[t.Tensor, '*'],
+        Float[t.Tensor, '* 3'],
+        Float[t.Tensor, '* 3 2'],
     ]:
         N = r_in.shape[0]
         normals = hit_record.normal
@@ -112,19 +112,19 @@ class Lambertian(Material):
 @jaxtyped(typechecker=typechecker)
 class Metal(Material):
     @jaxtyped(typechecker=typechecker)
-    def __init__(self, albedo: Float[t.Tensor, "3"], fuzz: float = 0.3):
+    def __init__(self, albedo: Float[t.Tensor, '3'], fuzz: float = 0.3):
         self.albedo = albedo.to(device)
         self.fuzz = max(0.0, min(fuzz, 1.0))
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def scatter_material(
-        r_in: Float[t.Tensor, "N 3 2"],
-        hit_record: "HitRecord",
+        r_in: Float[t.Tensor, 'N 3 2'],
+        hit_record: 'HitRecord',
     ) -> tuple[
-        Bool[t.Tensor, "*"],
-        Float[t.Tensor, "N 3"],
-        Float[t.Tensor, "N 3 2"],
+        Bool[t.Tensor, '*'],
+        Float[t.Tensor, 'N 3'],
+        Float[t.Tensor, 'N 3 2'],
     ]:
         N = r_in.shape[0]
         normals = hit_record.normal  # Shape: [N, 3]
@@ -164,12 +164,12 @@ class Dielectric(Material):
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def scatter_material(
-        r_in: Float[t.Tensor, "N 3 2"],
-        hit_record: "HitRecord",
+        r_in: Float[t.Tensor, 'N 3 2'],
+        hit_record: 'HitRecord',
     ) -> tuple[
-        Bool[t.Tensor, "*"],
-        Float[t.Tensor, "N 3"],
-        Float[t.Tensor, "N 3 2"],
+        Bool[t.Tensor, '*'],
+        Float[t.Tensor, 'N 3'],
+        Float[t.Tensor, 'N 3 2'],
     ]:
         N = r_in.shape[0]
         normals = hit_record.normal  # Shape: [N, 3]

@@ -34,23 +34,23 @@ class HitRecord:
     @jaxtyped(typechecker=typechecker)
     def set_face_normal(
         self,
-        ray_direction: Float[t.Tensor, "... 3"],
-        outward_normal: Float[t.Tensor, "... 3"],
+        ray_direction: Float[t.Tensor, '... 3'],
+        outward_normal: Float[t.Tensor, '... 3'],
     ) -> None:
-        """Determines whether the hit is from the outside or inside."""
-        self.front_face: Bool[t.Tensor, "..."] = (ray_direction * outward_normal).sum(dim=-1) < 0
-        self.normal: Float[t.Tensor, "... 3"] = t.where(
+        '''Determines whether the hit is from the outside or inside.'''
+        self.front_face: Bool[t.Tensor, '...'] = (ray_direction * outward_normal).sum(dim=-1) < 0
+        self.normal: Float[t.Tensor, '... 3'] = t.where(
             self.front_face.unsqueeze(-1), outward_normal, -outward_normal
         )
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def empty(shape):
-        device = t.device("cuda" if t.cuda.is_available() else "cpu")
+        device = t.device('cuda' if t.cuda.is_available() else 'cpu')
         hit = t.full(shape, False, dtype=t.bool, device=device)
         point = t.zeros((*shape, 3), dtype=t.float32, device=device)
         normal = t.zeros((*shape, 3), dtype=t.float32, device=device)
-        t_values = t.full(shape, float("inf"), dtype=t.float32, device=device)
+        t_values = t.full(shape, float('inf'), dtype=t.float32, device=device)
         front_face = t.full(shape, False, dtype=t.bool, device=device)
         material_type = t.full(shape, -1, dtype=t.long, device=device)
         albedo = t.zeros((*shape, 3), dtype=t.float32, device=device)
@@ -63,13 +63,13 @@ class HitRecord:
 
 @jaxtyped(typechecker=typechecker)
 class Hittable(ABC):
-    """Abstract class for hittable objects."""
+    '''Abstract class for hittable objects.'''
 
     @abstractmethod
     @jaxtyped(typechecker=typechecker)
     def hit(
         self,
-        pixel_rays: Float[t.Tensor, "N 3 2"],
+        pixel_rays: Float[t.Tensor, 'N 3 2'],
         t_min: float,
         t_max: float,
     ) -> HitRecord:
@@ -78,7 +78,7 @@ class Hittable(ABC):
 
 @jaxtyped(typechecker=typechecker)
 class HittableList(Hittable):
-    """List of hittable objects."""
+    '''List of hittable objects.'''
 
     def __init__(self, objects: List[Hittable] = []):
         self.objects: List[Hittable] = objects
@@ -88,7 +88,7 @@ class HittableList(Hittable):
 
     def hit(
         self,
-        pixel_rays: Float[t.Tensor, "N 3 2"],
+        pixel_rays: Float[t.Tensor, 'N 3 2'],
         t_min: float,
         t_max: float,
     ) -> HitRecord:
@@ -96,11 +96,11 @@ class HittableList(Hittable):
 
         N: int = pixel_rays.shape[0]
         record: HitRecord = HitRecord.empty((N,))
-        closest_so_far: Float[t.Tensor, "N"] = t.full((N,), t_max, device=device)
+        closest_so_far: Float[t.Tensor, 'N'] = t.full((N,), t_max, device=device)
 
         for obj in self.objects:
             obj_record: HitRecord = obj.hit(pixel_rays, t_min, t_max)
-            closer_mask: Bool[t.Tensor, "N"] = obj_record.hit & (obj_record.t < closest_so_far)
+            closer_mask: Bool[t.Tensor, 'N'] = obj_record.hit & (obj_record.t < closest_so_far)
             closest_so_far = t.where(closer_mask, obj_record.t, closest_so_far)
 
             record.hit = record.hit | obj_record.hit

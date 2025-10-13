@@ -10,7 +10,7 @@ from materials import MaterialType
 from sphere import SphereList
 
 # Choose device
-print(f"Using device: {device}")
+print(f'Using device: {device}')
 
 
 @jaxtyped(typechecker=typechecker)
@@ -295,11 +295,11 @@ def create_cornell_box_scene(max_depth):
 
 
 # Define scenes to render
-scenes = {"random_spheres": create_random_spheres_scene}
+scenes = {'random_spheres': create_random_spheres_scene}
 
 # Render all scenes
 for scene_name, scene_func in scenes.items():
-    print(f"Rendering {scene_name}...")
+    print(f'Rendering {scene_name}...')
     world, camera = scene_func()
     image = camera.render(world)
-    image.save(f"image_{scene_name}.png")
+    image.save(f'image_{scene_name}.png')
