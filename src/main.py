@@ -11,11 +11,6 @@ from sphere import SphereList
 
 
 @jaxtyped(typechecker=typechecker)
-def random_double(min_val=0.0, max_val=1.0):
-    return min_val + (max_val - min_val) * random.random()
-
-
-@jaxtyped(typechecker=typechecker)
 def random_color():
     return t.tensor([random.random(), random.random(), random.random()], device=device)
 
@@ -39,9 +34,9 @@ def create_random_spheres_scene():
     # Random small spheres
     for a in range(-11, 11):
         for b in range(-11, 11):
-            choose_mat = random_double()
+            choose_mat = random.random()
             center = t.tensor(
-                [a + 0.9 * random_double(), 0.2, b + 0.9 * random_double()], device=device
+                [a + 0.9 * random.random(), 0.2, b + 0.9 * random.random()], device=device
             )
             if (center - t.tensor([4, 0.2, 0], device=device)).norm() > 0.9:
                 if choose_mat < 0.8:
@@ -53,7 +48,7 @@ def create_random_spheres_scene():
                 elif choose_mat < 0.95:
                     # Metal
                     albedo = random_color() * 0.5 + 0.5
-                    fuzz = random_double(0, 0.5)
+                    fuzz = random.uniform(0, 0.5)
                     material_type = MaterialType.Metal
                     refractive_index = 0.0
                 else:
