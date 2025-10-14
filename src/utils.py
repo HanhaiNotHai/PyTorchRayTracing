@@ -18,11 +18,6 @@ def tensor_to_image(tensor: Float[t.Tensor, 'h w c'] | Int[t.Tensor, 'h w c']) -
 
 
 @jaxtyped(typechecker=typechecker)
-def degrees_to_radians(degrees: float) -> float:
-    return degrees * np.pi / 180.0
-
-
-@jaxtyped(typechecker=typechecker)
 def random_unit_vector(shape: tuple[int, ...]) -> Float[t.Tensor, '... 3']:
     vec = t.randn(*shape, device=device)
     vec = F.normalize(vec, dim=-1)

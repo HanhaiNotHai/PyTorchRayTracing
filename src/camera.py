@@ -10,7 +10,7 @@ from typeguard import typechecked as typechecker
 from config import device
 from hittable import HitRecord, Hittable
 from materials import Dielectric, Lambertian, MaterialType, Metal
-from utils import degrees_to_radians, random_in_unit_disk, tensor_to_image
+from utils import random_in_unit_disk, tensor_to_image
 
 
 @jaxtyped(typechecker=typechecker)
@@ -46,7 +46,7 @@ class Camera:
         h, w = self.image_height, self.image_width
 
         # Compute viewport dimensions
-        theta: float = degrees_to_radians(vfov)
+        theta: float = math.radians(vfov)
         h_viewport: float = math.tan(theta / 2)
         self.viewport_height: float = 2.0 * h_viewport * focus_dist
         self.viewport_width: float = self.viewport_height * self.aspect_ratio
@@ -66,7 +66,7 @@ class Camera:
         )
 
         # Calculate the camera defocus disk basis vectors
-        defocus_radius: float = focus_dist * math.tan(degrees_to_radians(defocus_angle / 2))
+        defocus_radius: float = focus_dist * math.tan(math.radians(defocus_angle / 2))
         self.defocus_disk_u: Float[t.Tensor, '3'] = self.u * defocus_radius
         self.defocus_disk_v: Float[t.Tensor, '3'] = self.v * defocus_radius
 
