@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from math import inf
 from typing import List
 
 import torch as t
@@ -50,7 +51,7 @@ class HitRecord:
         hit = t.full(shape, False, dtype=t.bool, device=device)
         point = t.zeros((*shape, 3), dtype=t.float32, device=device)
         normal = t.zeros((*shape, 3), dtype=t.float32, device=device)
-        t_values = t.full(shape, float('inf'), dtype=t.float32, device=device)
+        t_values = t.full(shape, inf, dtype=t.float32, device=device)
         front_face = t.full(shape, False, dtype=t.bool, device=device)
         material_type = t.full(shape, -1, dtype=t.long, device=device)
         albedo = t.zeros((*shape, 3), dtype=t.float32, device=device)

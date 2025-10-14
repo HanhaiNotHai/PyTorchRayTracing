@@ -1,3 +1,5 @@
+from math import inf
+
 import torch as t
 import torch.nn.functional as F
 from jaxtyping import Bool, Float, Int, jaxtyped
@@ -37,7 +39,7 @@ class Sphere(Hittable):
         discriminant: Float[t.Tensor, 'N'] = b**2 - 4 * a * c
         sphere_hit: Bool[t.Tensor, 'N'] = discriminant >= 0
 
-        t_hit: Float[t.Tensor, 'N'] = t.full((N,), float('inf'), device=device)
+        t_hit: Float[t.Tensor, 'N'] = t.full((N,), inf, device=device)
         sqrt_discriminant: Float[t.Tensor, 'N'] = t.zeros(N, device=device)
         sqrt_discriminant[sphere_hit] = t.sqrt(discriminant[sphere_hit])
 
@@ -54,7 +56,7 @@ class Sphere(Hittable):
         t_hit = t.where((t0_valid) & (t0 < t_hit), t0, t_hit)
         t_hit = t.where((t1_valid) & (t1 < t_hit), t1, t_hit)
 
-        sphere_hit = sphere_hit & (t_hit < float('inf'))
+        sphere_hit = sphere_hit & (t_hit < inf)
 
         # Compute hit points and normals where sphere_hit is True
         hit_points: Float[t.Tensor, 'N 3'] = origin + pixel_directions * t_hit.unsqueeze(-1)
@@ -115,8 +117,8 @@ class SphereList(Hittable):
         sqrt_discriminant[valid_discriminant] = t.sqrt(discriminant[valid_discriminant])
 
         denom: Float[t.Tensor, 'N M'] = 2.0 * a
-        t0: Float[t.Tensor, 'N M'] = t.full_like(discriminant, float('inf'))
-        t1: Float[t.Tensor, 'N M'] = t.full_like(discriminant, float('inf'))
+        t0: Float[t.Tensor, 'N M'] = t.full_like(discriminant, inf)
+        t1: Float[t.Tensor, 'N M'] = t.full_like(discriminant, inf)
 
         t0[valid_discriminant] = (
             -b[valid_discriminant] - sqrt_discriminant[valid_discriminant]
@@ -128,16 +130,16 @@ class SphereList(Hittable):
         t0_valid: Bool[t.Tensor, 'N M'] = (t0 > t_min) & (t0 < t_max)
         t1_valid: Bool[t.Tensor, 'N M'] = (t1 > t_min) & (t1 < t_max)
 
-        t_hit: Float[t.Tensor, 'N M'] = t.full_like(discriminant, float('inf'))
+        t_hit: Float[t.Tensor, 'N M'] = t.full_like(discriminant, inf)
         t_hit[t0_valid] = t0[t0_valid]
         t_hit[t1_valid & (t1 < t_hit)] = t1[t1_valid & (t1 < t_hit)]
 
-        sphere_hit: Bool[t.Tensor, 'N M'] = valid_discriminant & (t_hit < float('inf'))
+        sphere_hit: Bool[t.Tensor, 'N M'] = valid_discriminant & (t_hit < inf)
 
         t_hit_min: Float[t.Tensor, 'N'] = t.min(t_hit, dim=1)[0]
         sphere_indices: Int[t.Tensor, 'N'] = t.min(t_hit, dim=1)[1]
         sphere_hit_any: Bool[t.Tensor, 'N'] = sphere_hit.any(dim=1)
-        t_hit_min[~sphere_hit_any] = float('inf')
+        t_hit_min[~sphere_hit_any] = inf
 
         record: HitRecord = HitRecord.empty((N,))
         record.hit = sphere_hit_any

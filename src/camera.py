@@ -1,4 +1,5 @@
 import math
+from math import inf
 
 import torch as t
 import torch.nn.functional as F
@@ -103,7 +104,7 @@ class Camera:
                 break
 
             # Perform hit test
-            hit_record = world.hit(rays, 0.001, float('inf'))
+            hit_record = world.hit(rays, 0.001, inf)
 
             # Handle rays that did not hit anything
             no_hit_mask = (~hit_record.hit) & active_mask
