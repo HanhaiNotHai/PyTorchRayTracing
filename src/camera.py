@@ -127,10 +127,10 @@ class Camera:
                 material_types_hit = hit_record.material_type[hit_indices]
 
                 # Group indices by material
-                for material_type in [
-                    MaterialType.Lambertian,
-                    MaterialType.Metal,
-                    MaterialType.Dielectric,
+                for material_type, scatter_material in [
+                    (MaterialType.Lambertian, Lambertian.scatter_material),
+                    (MaterialType.Metal, Metal.scatter_material),
+                    (MaterialType.Dielectric, Dielectric.scatter_material),
                 ]:
                     material_mask = material_types_hit == material_type
 
@@ -150,18 +150,9 @@ class Camera:
                         )
 
                         # Process scattering for each material
-                        if material_type == MaterialType.Lambertian:
-                            scatter_mask, mat_attenuation, scattered_rays = (
-                                Lambertian.scatter_material(ray_in, sub_hit_record)
-                            )
-                        elif material_type == MaterialType.Metal:
-                            scatter_mask, mat_attenuation, scattered_rays = Metal.scatter_material(
-                                ray_in, sub_hit_record
-                            )
-                        elif material_type == MaterialType.Dielectric:
-                            scatter_mask, mat_attenuation, scattered_rays = (
-                                Dielectric.scatter_material(ray_in, sub_hit_record)
-                            )
+                        scatter_mask, mat_attenuation, scattered_rays = scatter_material(
+                            ray_in, sub_hit_record
+                        )
                         attenuation[indices] *= mat_attenuation
                         rays[indices] = scattered_rays
                         terminated = ~scatter_mask
