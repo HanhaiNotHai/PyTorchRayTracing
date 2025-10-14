@@ -3,7 +3,7 @@ from math import inf
 from typing import List
 
 import torch as t
-from jaxtyping import Bool, Float, jaxtyped
+from jaxtyping import Bool, Float, Int, jaxtyped
 from typeguard import typechecked as typechecker
 
 
@@ -12,15 +12,15 @@ class HitRecord:
     @jaxtyped(typechecker=typechecker)
     def __init__(
         self,
-        hit,
-        point,
-        normal,
-        t,
-        front_face=None,
-        material_type=None,
-        albedo=None,
-        fuzz=None,
-        refractive_index=None,
+        hit: Bool[t.Tensor, '...'],
+        point: Float[t.Tensor, '... 3'],
+        normal: Float[t.Tensor, '... 3'],
+        t: Float[t.Tensor, '...'],
+        front_face: Bool[t.Tensor, '...'],
+        material_type: Int[t.Tensor, '...'],
+        albedo: Float[t.Tensor, '... 3'],
+        fuzz: Float[t.Tensor, '...'],
+        refractive_index: Float[t.Tensor, '...'],
     ):
         self.hit = hit
         self.point = point
