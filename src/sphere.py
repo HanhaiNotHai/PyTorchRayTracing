@@ -161,3 +161,39 @@ class SphereList(Hittable):
         ]
 
         return record
+
+
+class SphereInfo:
+
+    def __init__(self):
+        self.sphere_centers: list[list[float, float, float]] = []
+        self.sphere_radii: list[float] = []
+        self.material_types: list[int] = []
+        self.albedos: list[list[float, float, float]] = []
+        self.fuzzes: list[float] = []
+        self.refractive_indices: list[float] = []
+
+    def add(
+        self,
+        sphere_center: list[float, float, float],
+        sphere_radius: float,
+        material_type: int,
+        albedo: list[float, float, float],
+        fuzz: float = 0.0,
+        refractive_index: float = 0.0,
+    ):
+        self.sphere_centers.append(sphere_center)
+        self.sphere_radii.append(sphere_radius)
+        self.material_types.append(material_type)
+        self.albedos.append(albedo)
+        self.fuzzes.append(fuzz)
+        self.refractive_indices.append(refractive_index)
+
+    def pack(self):
+        sphere_centers = torch.tensor(self.sphere_centers, dtype=torch.float32)
+        sphere_radii = torch.tensor(self.sphere_radii, dtype=torch.float32)
+        material_types = torch.tensor(self.material_types, dtype=torch.int64)
+        albedos = torch.tensor(self.albedos, dtype=torch.float32)
+        fuzzes = torch.tensor(self.fuzzes, dtype=torch.float32)
+        refractive_indices = torch.tensor(self.refractive_indices, dtype=torch.float32)
+        return sphere_centers, sphere_radii, material_types, albedos, fuzzes, refractive_indices

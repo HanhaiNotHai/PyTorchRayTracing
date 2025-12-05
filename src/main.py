@@ -7,99 +7,69 @@ from typeguard import typechecked as typechecker
 from camera import Camera
 from config import device
 from materials import MaterialType
-from sphere import SphereList
-
-
-@jaxtyped(typechecker=typechecker)
-def random_color():
-    return torch.tensor([random.random(), random.random(), random.random()])
+from sphere import SphereInfo, SphereList
 
 
 def create_random_spheres_scene():
-    sphere_centers = []
-    sphere_radii = []
-    material_types = []
-    albedos = []
-    fuzzes = []
-    refractive_indices = []
+    sphere_info = SphereInfo()
 
     # Ground sphere
-    sphere_centers.append(torch.tensor([0, -1000, 0]))
-    sphere_radii.append(1000.0)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.5, 0.5, 0.5]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[0, -1000, 0],
+        sphere_radius=1000,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.5, 0.5, 0.5],
+    )
 
     # Random small spheres
     for a in range(-11, 11):
         for b in range(-11, 11):
             choose_mat = random.random()
-            center = torch.tensor([a + 0.9 * random.random(), 0.2, b + 0.9 * random.random()])
-            if (center - torch.tensor([4, 0.2, 0])).norm() > 0.9:
+            center = [a + 0.9 * random.random(), 0.2, b + 0.9 * random.random()]
+            if (torch.tensor(center) - torch.tensor([4, 0.2, 0])).norm() > 0.9:
+                fuzz = 0
+                refractive_index = 0
                 if choose_mat < 0.8:
                     # Diffuse
-                    albedo = random_color() * random_color()
                     material_type = MaterialType.Lambertian
-                    fuzz = 0.0
-                    refractive_index = 0.0
+                    albedo = [random.random() * random.random() for _ in range(3)]
                 elif choose_mat < 0.95:
                     # Metal
-                    albedo = random_color() * 0.5 + 0.5
-                    fuzz = random.uniform(0, 0.5)
                     material_type = MaterialType.Metal
-                    refractive_index = 0.0
+                    albedo = [random.random() * 0.5 + 0.5 for _ in range(3)]
+                    fuzz = random.uniform(0, 0.5)
                 else:
                     # Glass
-                    albedo = torch.tensor([0.0, 0.0, 0.0])
-                    fuzz = 0.0
-                    refractive_index = 1.5
                     material_type = MaterialType.Dielectric
-                sphere_centers.append(center)
-                sphere_radii.append(0.2)
-                material_types.append(material_type)
-                albedos.append(albedo)
-                fuzzes.append(fuzz)
-                refractive_indices.append(refractive_index)
+                    albedo = [0, 0, 0]
+                    refractive_index = 1.5
+                sphere_info.add(center, 0.2, material_type, albedo, fuzz, refractive_index)
 
     # Three larger spheres
-    sphere_centers.append(torch.tensor([0, 1, 0]))
-    sphere_radii.append(1.0)
-    material_types.append(MaterialType.Dielectric)
-    albedos.append(torch.tensor([0.0, 0.0, 0.0]))
-    fuzzes.append(0.0)
-    refractive_indices.append(1.5)
+    sphere_info.add(
+        sphere_center=[0, 1, 0],
+        sphere_radius=1,
+        material_type=MaterialType.Dielectric,
+        albedo=[0, 0, 0],
+        refractive_index=1.5,
+    )
 
-    sphere_centers.append(torch.tensor([-4, 1, 0]))
-    sphere_radii.append(1.0)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.4, 0.2, 0.1]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[-4, 1, 0],
+        sphere_radius=1,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.4, 0.2, 0.1],
+    )
 
-    sphere_centers.append(torch.tensor([4, 1, 0]))
-    sphere_radii.append(1.0)
-    material_types.append(MaterialType.Metal)
-    albedos.append(torch.tensor([0.7, 0.6, 0.5]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[4, 1, 0],
+        sphere_radius=1,
+        material_type=MaterialType.Metal,
+        albedo=[0.7, 0.6, 0.5],
+    )
 
     # Convert lists to tensors
-    sphere_centers = torch.stack(sphere_centers)
-    sphere_radii = torch.tensor(sphere_radii)
-    material_types = torch.tensor(material_types)
-    albedos = torch.stack(albedos)
-    fuzzes = torch.tensor(fuzzes)
-    refractive_indices = torch.tensor(refractive_indices)
-
-    world = SphereList(
-        centers=sphere_centers,
-        radii=sphere_radii,
-        material_types=material_types,
-        albedos=albedos,
-        fuzzes=fuzzes,
-        refractive_indices=refractive_indices,
-    )
+    world = SphereList(*sphere_info.pack())
 
     camera = Camera(
         image_width=320,
@@ -119,69 +89,53 @@ def create_random_spheres_scene():
 
 
 def create_material_showcase_scene():
-    sphere_centers = []
-    sphere_radii = []
-    material_types = []
-    albedos = []
-    fuzzes = []
-    refractive_indices = []
+    sphere_info = SphereInfo()
 
     # Ground sphere
-    sphere_centers.append(torch.tensor([0, -100.5, -1]))
-    sphere_radii.append(100)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.5, 0.8, 0.3]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[0, -100.5, -1],
+        sphere_radius=100,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.5, 0.8, 0.3],
+    )
 
     # Center glass sphere
-    sphere_centers.append(torch.tensor([0, 0, -1]))
-    sphere_radii.append(0.5)
-    material_types.append(MaterialType.Dielectric)
-    albedos.append(torch.tensor([1.0, 1.0, 1.0]))
-    fuzzes.append(0.0)
-    refractive_indices.append(1.5)
+    sphere_info.add(
+        sphere_center=[0, 0, -1],
+        sphere_radius=0.5,
+        material_type=MaterialType.Dielectric,
+        albedo=[1.0, 1.0, 1.0],
+        refractive_index=1.5,
+    )
 
     # Left metallic sphere
-    sphere_centers.append(torch.tensor([-1.0, 0, -0.8]))
-    sphere_radii.append(0.4)
-    material_types.append(MaterialType.Metal)
-    albedos.append(torch.tensor([0.8, 0.6, 0.2]))
-    fuzzes.append(0.2)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[-1.0, 0, -0.8],
+        sphere_radius=0.4,
+        material_type=MaterialType.Metal,
+        albedo=[0.8, 0.6, 0.2],
+        fuzz=0.2,
+    )
 
     # Right matte sphere
-    sphere_centers.append(torch.tensor([1.0, -0.1, -0.7]))
-    sphere_radii.append(0.3)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.7, 0.3, 0.3]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[1.0, -0.1, -0.7],
+        sphere_radius=0.3,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.7, 0.3, 0.3],
+    )
 
     # Small floating glass sphere
-    sphere_centers.append(torch.tensor([0.3, 0.3, -0.5]))
-    sphere_radii.append(0.15)
-    material_types.append(MaterialType.Dielectric)
-    albedos.append(torch.tensor([1.0, 1.0, 1.0]))
-    fuzzes.append(0.0)
-    refractive_indices.append(1.5)
+    sphere_info.add(
+        sphere_center=[0.3, 0.3, -0.5],
+        sphere_radius=0.15,
+        material_type=MaterialType.Dielectric,
+        albedo=[1.0, 1.0, 1.0],
+        refractive_index=1.5,
+    )
 
     # Convert lists to tensors
-    sphere_centers = torch.stack(sphere_centers)
-    sphere_radii = torch.tensor(sphere_radii)
-    material_types = torch.tensor(material_types)
-    albedos = torch.stack(albedos)
-    fuzzes = torch.tensor(fuzzes)
-    refractive_indices = torch.tensor(refractive_indices)
-
-    world = SphereList(
-        centers=sphere_centers,
-        radii=sphere_radii,
-        material_types=material_types,
-        albedos=albedos,
-        fuzzes=fuzzes,
-        refractive_indices=refractive_indices,
-    )
+    world = SphereList(*sphere_info.pack())
 
     camera = Camera(
         image_width=1080,
@@ -201,71 +155,54 @@ def create_material_showcase_scene():
 
 
 def create_cornell_box_scene(max_depth):
-    sphere_centers = []
-    sphere_radii = []
-    material_types = []
-    albedos = []
-    fuzzes = []
-    refractive_indices = []
+    sphere_info = SphereInfo()
 
     # Red wall (left)
-    sphere_centers.append(torch.tensor([-101, 0, 0]))
-    sphere_radii.append(100)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.75, 0.25, 0.25]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[-101, 0, 0],
+        sphere_radius=100,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.75, 0.25, 0.25],
+    )
 
     # Green wall (right)
-    sphere_centers.append(torch.tensor([101, 0, 0]))
-    sphere_radii.append(100)
-    material_types.append(MaterialType.Lambertian)
-    albedos.append(torch.tensor([0.25, 0.75, 0.25]))
-    fuzzes.append(0.0)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[101, 0, 0],
+        sphere_radius=100,
+        material_type=MaterialType.Lambertian,
+        albedo=[0.25, 0.75, 0.25],
+    )
 
     # White walls (top, bottom, back)
     for pos in [(0, 101, 0), (0, -101, 0), (0, 0, -101)]:
-        sphere_centers.append(torch.tensor(pos))
-        sphere_radii.append(100)
-        material_types.append(MaterialType.Lambertian)
-        albedos.append(torch.tensor([0.75, 0.75, 0.75]))
-        fuzzes.append(0.0)
-        refractive_indices.append(0.0)
+        sphere_info.add(
+            sphere_center=pos,
+            sphere_radius=100,
+            material_type=MaterialType.Lambertian,
+            albedo=[0.75, 0.75, 0.75],
+        )
 
     # Add two spheres for more interesting scene
     # Glass sphere
-    sphere_centers.append(torch.tensor([-0.5, -0.7, -0.5]))
-    sphere_radii.append(0.3)
-    material_types.append(MaterialType.Dielectric)
-    albedos.append(torch.tensor([1.0, 1.0, 1.0]))
-    fuzzes.append(0.0)
-    refractive_indices.append(1.5)
+    sphere_info.add(
+        sphere_center=[-0.5, -0.7, -0.5],
+        sphere_radius=0.3,
+        material_type=MaterialType.Dielectric,
+        albedo=[1.0, 1.0, 1.0],
+        refractive_index=1.5,
+    )
 
     # Metal sphere
-    sphere_centers.append(torch.tensor([0.5, -0.7, 0.5]))
-    sphere_radii.append(0.3)
-    material_types.append(MaterialType.Metal)
-    albedos.append(torch.tensor([0.8, 0.8, 0.8]))
-    fuzzes.append(0.1)
-    refractive_indices.append(0.0)
+    sphere_info.add(
+        sphere_center=[0.5, -0.7, 0.5],
+        sphere_radius=0.3,
+        material_type=MaterialType.Metal,
+        albedo=[0.8, 0.8, 0.8],
+        fuzz=0.1,
+    )
 
     # Convert lists to tensors
-    sphere_centers = torch.stack(sphere_centers)
-    sphere_radii = torch.tensor(sphere_radii)
-    material_types = torch.tensor(material_types)
-    albedos = torch.stack(albedos)
-    fuzzes = torch.tensor(fuzzes)
-    refractive_indices = torch.tensor(refractive_indices)
-
-    world = SphereList(
-        centers=sphere_centers,
-        radii=sphere_radii,
-        material_types=material_types,
-        albedos=albedos,
-        fuzzes=fuzzes,
-        refractive_indices=refractive_indices,
-    )
+    world = SphereList(*sphere_info.pack())
 
     camera = Camera(
         image_width=1080,
