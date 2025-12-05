@@ -8,10 +8,10 @@ from enum import IntEnum
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Bool, Float, jaxtyped
+from jaxtyping import Bool, Float
 from torch import Tensor
-from typeguard import typechecked as typechecker
 
+from config import typed
 from utils import random_unit_vector
 
 
@@ -21,13 +21,13 @@ class MaterialType(IntEnum):
     Dielectric = 2
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def reflect(v: Float[Tensor, 'N 3'], n: Float[Tensor, 'N 3']) -> Float[Tensor, 'N 3']:
     # Reflects vector v around normal n
     return v - 2 * (v * n).sum(dim=1, keepdim=True) * n
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def refract(
     uv: Float[Tensor, 'N 3'], n: Float[Tensor, 'N 3'], etai_over_etat: Float[Tensor, 'N 1']
 ) -> Float[Tensor, 'N 3']:
@@ -38,7 +38,7 @@ def refract(
     return r_out_perp + r_out_parallel
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def reflectance(
     cosine: Float[Tensor, 'N 1'], ref_idx: Float[Tensor, 'N 1']
 ) -> Float[Tensor, 'N 1']:
@@ -47,15 +47,15 @@ def reflectance(
     return r0 + (one - r0) * (one - cosine) ** 5
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Material(ABC):
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def __init__(self):
         pass
 
     @staticmethod
     @abstractmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def scatter_material(
         r_in: Float[Tensor, '* 3 2'],
         hit_record: 'HitRecord',
@@ -67,14 +67,14 @@ class Material(ABC):
         pass
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Lambertian(Material):
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def __init__(self, albedo: Float[Tensor, '3']):
         self.albedo = albedo
 
     @staticmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def scatter_material(
         r_in: Float[Tensor, 'N 3 2'],
         hit_record: 'HitRecord',
@@ -109,15 +109,15 @@ class Lambertian(Material):
         return scatter_mask, attenuation, new_rays
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Metal(Material):
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def __init__(self, albedo: Float[Tensor, '3'], fuzz: float = 0.3):
         self.albedo = albedo
         self.fuzz = max(0.0, min(fuzz, 1.0))
 
     @staticmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def scatter_material(
         r_in: Float[Tensor, 'N 3 2'],
         hit_record: 'HitRecord',
@@ -156,13 +156,13 @@ class Metal(Material):
         return scatter_mask, attenuation, new_rays
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Dielectric(Material):
     def __init__(self, refraction_index: float):
         self.refraction_index = refraction_index
 
     @staticmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def scatter_material(
         r_in: Float[Tensor, 'N 3 2'],
         hit_record: 'HitRecord',

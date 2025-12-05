@@ -3,14 +3,15 @@ from math import inf
 from typing import List
 
 import torch
-from jaxtyping import Bool, Float, Int, jaxtyped
+from jaxtyping import Bool, Float, Int
 from torch import Tensor
-from typeguard import typechecked as typechecker
+
+from config import typed
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class HitRecord:
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def __init__(
         self,
         hit: Bool[Tensor, '...'],
@@ -33,7 +34,7 @@ class HitRecord:
         self.fuzz = fuzz
         self.refractive_index = refractive_index
 
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def set_face_normal(
         self,
         ray_direction: Float[Tensor, '... 3'],
@@ -46,7 +47,7 @@ class HitRecord:
         )
 
     @staticmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def empty(shape):
         hit = torch.full(shape, False, dtype=torch.bool)
         point = torch.zeros((*shape, 3), dtype=torch.float32)
@@ -62,12 +63,12 @@ class HitRecord:
         )
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Hittable(ABC):
     '''Abstract class for hittable objects.'''
 
     @abstractmethod
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def hit(
         self,
         pixel_rays: Float[Tensor, 'N 3 2'],
@@ -77,7 +78,7 @@ class Hittable(ABC):
         pass
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class HittableList(Hittable):
     '''List of hittable objects.'''
 
