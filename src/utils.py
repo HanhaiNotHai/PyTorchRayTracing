@@ -6,8 +6,6 @@ from PIL import Image
 from torch import Tensor
 from typeguard import typechecked as typechecker
 
-from config import device
-
 
 @jaxtyped(typechecker=typechecker)
 def tensor_to_image(tensor: Float[Tensor, 'h w c'] | Int[Tensor, 'h w c']) -> Image.Image:
@@ -20,7 +18,7 @@ def tensor_to_image(tensor: Float[Tensor, 'h w c'] | Int[Tensor, 'h w c']) -> Im
 
 @jaxtyped(typechecker=typechecker)
 def random_unit_vector(shape: tuple[int, ...]) -> Float[Tensor, '... 3']:
-    vec = torch.randn(*shape, device=device)
+    vec = torch.randn(*shape)
     vec = F.normalize(vec, dim=-1)
     return vec
 
@@ -34,9 +32,9 @@ def random_on_hemisphere(normal: Float[Tensor, '... 3']) -> Float[Tensor, '... 3
 
 @jaxtyped(typechecker=typechecker)
 def background_color_gradient(sample: int, h: int, w: int) -> Float[Tensor, 'sample h w 3']:
-    white: Float[Tensor, '3'] = torch.tensor([1.0, 1.0, 1.0], device=device)
-    light_blue: Float[Tensor, '3'] = torch.tensor([0.5, 0.7, 1.0], device=device)
-    a: Float[Tensor, 'h 1'] = torch.linspace(0, 1, h, device=device).unsqueeze(1)
+    white: Float[Tensor, '3'] = torch.tensor([1.0, 1.0, 1.0])
+    light_blue: Float[Tensor, '3'] = torch.tensor([0.5, 0.7, 1.0])
+    a: Float[Tensor, 'h 1'] = torch.linspace(0, 1, h).unsqueeze(1)
     background_colors_single: Float[Tensor, 'h 3'] = a * light_blue + (1.0 - a) * white
     background_colors: Float[Tensor, 'sample h w 3'] = (
         background_colors_single.unsqueeze(0).unsqueeze(2).expand(sample, h, w, 3) * 255
@@ -46,8 +44,8 @@ def background_color_gradient(sample: int, h: int, w: int) -> Float[Tensor, 'sam
 
 @jaxtyped(typechecker=typechecker)
 def random_in_unit_disk(shape: tuple[int, ...]) -> Float[Tensor, '... 2']:
-    r: Float[Tensor, '...'] = torch.sqrt(torch.rand(*shape, device=device))
-    theta: Float[Tensor, '...'] = torch.rand(*shape, device=device) * 2 * np.pi
+    r: Float[Tensor, '...'] = torch.sqrt(torch.rand(*shape))
+    theta: Float[Tensor, '...'] = torch.rand(*shape) * 2 * np.pi
     x: Float[Tensor, '...'] = r * torch.cos(theta)
     y: Float[Tensor, '...'] = r * torch.sin(theta)
     return torch.stack([x, y], dim=-1)

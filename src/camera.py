@@ -9,7 +9,6 @@ from torch import Tensor
 from tqdm import tqdm
 from typeguard import typechecked as typechecker
 
-from config import device
 from hittable import HitRecord, Hittable
 from materials import Dielectric, Lambertian, MaterialType, Metal
 from utils import random_in_unit_disk, tensor_to_image
@@ -19,9 +18,9 @@ from utils import random_in_unit_disk, tensor_to_image
 class Camera:
     def __init__(
         self,
-        look_from: Float[Tensor, '3'] = torch.tensor([0.0, 0.0, 0.0], device=device),
-        look_at: Float[Tensor, '3'] = torch.tensor([0.0, 0.0, -1.0], device=device),
-        vup: Float[Tensor, '3'] = torch.tensor([0.0, 1.0, 0.0], device=device),
+        look_from: Float[Tensor, '3'] = torch.tensor([0.0, 0.0, 0.0]),
+        look_at: Float[Tensor, '3'] = torch.tensor([0.0, 0.0, -1.0]),
+        vup: Float[Tensor, '3'] = torch.tensor([0.0, 1.0, 0.0]),
         aspect_ratio: float = 16.0 / 9.0,
         image_width: int = 400,
         samples_per_pixel: int = 10,
@@ -76,9 +75,9 @@ class Camera:
         self.pixel_delta_u: Float[Tensor, '3'] = viewport_u / (w - 1)
         self.pixel_delta_v: Float[Tensor, '3'] = viewport_v / (h - 1)
 
-        self.viewport_lower_left = self.viewport_lower_left.to(device)
-        self.pixel_delta_u = self.pixel_delta_u.to(device)
-        self.pixel_delta_v = self.pixel_delta_v.to(device)
+        self.viewport_lower_left = self.viewport_lower_left
+        self.pixel_delta_u = self.pixel_delta_u
+        self.pixel_delta_v = self.pixel_delta_v
 
     @jaxtyped(typechecker=typechecker)
     def defocus_disk_sample(self, sample: int, h: int, w: int) -> Float[Tensor, 'sample h w 3']:
@@ -95,10 +94,10 @@ class Camera:
         world: Hittable,
     ) -> Float[Tensor, 'N 3']:
         N = pixel_rays.shape[0]
-        colors = torch.zeros((N, 3), device=device)
-        attenuation = torch.ones((N, 3), device=device)
+        colors = torch.zeros((N, 3))
+        attenuation = torch.ones((N, 3))
         rays = pixel_rays
-        active_mask = torch.ones(N, dtype=torch.bool, device=device)
+        active_mask = torch.ones(N, dtype=torch.bool)
 
         for _ in range(self.max_depth):
             if not active_mask.any():
@@ -112,12 +111,8 @@ class Camera:
             if no_hit_mask.any():
                 ray_dirs = F.normalize(rays[no_hit_mask, :, 1], dim=-1)
                 t_param = 0.5 * (ray_dirs[:, 1] + 1.0)
-                background_colors = (1.0 - t_param).unsqueeze(-1) * torch.tensor(
-                    [1.0, 1.0, 1.0], device=device
-                )
-                background_colors += t_param.unsqueeze(-1) * torch.tensor(
-                    [0.5, 0.7, 1.0], device=device
-                )
+                background_colors = (1.0 - t_param).unsqueeze(-1) * torch.tensor([1.0, 1.0, 1.0])
+                background_colors += t_param.unsqueeze(-1) * torch.tensor([0.5, 0.7, 1.0])
                 colors[no_hit_mask] += attenuation[no_hit_mask] * background_colors
                 active_mask[no_hit_mask] = False
 
@@ -160,7 +155,7 @@ class Camera:
                         if terminated.any():
                             term_indices = indices[terminated.nonzero(as_tuple=False).squeeze(-1)]
                             colors[term_indices] += attenuation[term_indices] * torch.zeros(
-                                (term_indices.numel(), 3), device=device
+                                (term_indices.numel(), 3)
                             )
                             active_mask[term_indices] = False
             else:
@@ -169,12 +164,8 @@ class Camera:
         if active_mask.any():
             ray_dirs = F.normalize(rays[active_mask, :, 1], dim=-1)
             t_param = 0.5 * (ray_dirs[:, 1] + 1.0)
-            background_colors = (1.0 - t_param).unsqueeze(-1) * torch.tensor(
-                [1.0, 1.0, 1.0], device=device
-            )
-            background_colors += t_param.unsqueeze(-1) * torch.tensor(
-                [0.5, 0.7, 1.0], device=device
-            )
+            background_colors = (1.0 - t_param).unsqueeze(-1) * torch.tensor([1.0, 1.0, 1.0])
+            background_colors += t_param.unsqueeze(-1) * torch.tensor([0.5, 0.7, 1.0])
             colors[active_mask] += attenuation[active_mask] * background_colors
 
         return colors
@@ -185,12 +176,12 @@ class Camera:
         h, w = self.image_height, self.image_width
 
         # Prepare grid indices for pixels
-        j_indices = torch.arange(h, device=device).view(1, h, 1, 1)
-        i_indices = torch.arange(w, device=device).view(1, 1, w, 1)
+        j_indices = torch.arange(h).view(1, h, 1, 1)
+        i_indices = torch.arange(w).view(1, 1, w, 1)
 
         # Generate random offsets for antialiasing
-        noise_u: Float[Tensor, 'sample h w 1'] = torch.rand((sample, h, w, 1), device=device)
-        noise_v: Float[Tensor, 'sample h w 1'] = torch.rand((sample, h, w, 1), device=device)
+        noise_u: Float[Tensor, 'sample h w 1'] = torch.rand((sample, h, w, 1))
+        noise_v: Float[Tensor, 'sample h w 1'] = torch.rand((sample, h, w, 1))
 
         # Compute pixel positions on the viewport
         sampled_pixels: Float[Tensor, 'sample h w 3'] = (
@@ -201,7 +192,7 @@ class Camera:
 
         # Build rays
         if self.defocus_angle <= 0:
-            ray_origin = self.look_from.to(device).view(1, 1, 1, 3).expand(sample, h, w, 3)
+            ray_origin = self.look_from.view(1, 1, 1, 3).expand(sample, h, w, 3)
         else:
             ray_origin = self.defocus_disk_sample(sample, h, w)
         directions: Float[Tensor, 'sample h w 3'] = F.normalize(
@@ -215,7 +206,7 @@ class Camera:
         pixel_rays_flat: Float[Tensor, 'N 3 2'] = pixel_rays.view(N, 3, 2)
 
         # Prepare an empty tensor for colors
-        colors_flat = torch.zeros((N, 3), device=device)
+        colors_flat = torch.zeros((N, 3))
 
         # Process rays in batches
         for i in tqdm(

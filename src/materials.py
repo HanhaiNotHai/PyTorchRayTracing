@@ -12,7 +12,6 @@ from jaxtyping import Bool, Float, jaxtyped
 from torch import Tensor
 from typeguard import typechecked as typechecker
 
-from config import device
 from utils import random_unit_vector
 
 
@@ -32,7 +31,7 @@ def reflect(v: Float[Tensor, 'N 3'], n: Float[Tensor, 'N 3']) -> Float[Tensor, '
 def refract(
     uv: Float[Tensor, 'N 3'], n: Float[Tensor, 'N 3'], etai_over_etat: Float[Tensor, 'N 1']
 ) -> Float[Tensor, 'N 3']:
-    one = torch.tensor(1.0, device=uv.device)
+    one = torch.tensor(1.0)
     cos_theta = torch.minimum((-uv * n).sum(dim=1, keepdim=True), one)
     r_out_perp = etai_over_etat * (uv + cos_theta * n)
     r_out_parallel = -torch.sqrt(torch.abs(one - (r_out_perp**2).sum(dim=1, keepdim=True))) * n
@@ -43,7 +42,7 @@ def refract(
 def reflectance(
     cosine: Float[Tensor, 'N 1'], ref_idx: Float[Tensor, 'N 1']
 ) -> Float[Tensor, 'N 1']:
-    one = torch.tensor(1.0, device=ref_idx.device)
+    one = torch.tensor(1.0)
     r0 = ((one - ref_idx) / (one + ref_idx)) ** 2
     return r0 + (one - r0) * (one - cosine) ** 5
 
@@ -72,7 +71,7 @@ class Material(ABC):
 class Lambertian(Material):
     @jaxtyped(typechecker=typechecker)
     def __init__(self, albedo: Float[Tensor, '3']):
-        self.albedo = albedo.to(device)
+        self.albedo = albedo
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
@@ -89,7 +88,7 @@ class Lambertian(Material):
         points = hit_record.point
 
         # Generate scatter direction
-        scatter_direction = normals + random_unit_vector((N, 3)).to(device)
+        scatter_direction = normals + random_unit_vector((N, 3))
 
         # Handle degenerate scatter direction
         zero_mask = scatter_direction.norm(dim=1) < 1e-8
@@ -105,7 +104,7 @@ class Lambertian(Material):
 
         # Attenuation is the albedo
         attenuation = hit_record.albedo
-        scatter_mask = torch.ones(N, dtype=torch.bool, device=device)
+        scatter_mask = torch.ones(N, dtype=torch.bool)
 
         return scatter_mask, attenuation, new_rays
 
@@ -114,7 +113,7 @@ class Lambertian(Material):
 class Metal(Material):
     @jaxtyped(typechecker=typechecker)
     def __init__(self, albedo: Float[Tensor, '3'], fuzz: float = 0.3):
-        self.albedo = albedo.to(device)
+        self.albedo = albedo
         self.fuzz = max(0.0, min(fuzz, 1.0))
 
     @staticmethod
@@ -139,7 +138,7 @@ class Metal(Material):
         fuzz = hit_record.fuzz.unsqueeze(1)  # Shape: [N, 1]
 
         reflected_direction = reflect(in_directions, normals)
-        reflected_direction = reflected_direction + fuzz * random_unit_vector((N, 3)).to(device)
+        reflected_direction = reflected_direction + fuzz * random_unit_vector((N, 3))
         reflected_direction = F.normalize(reflected_direction, dim=-1)
 
         # Check if reflected ray is above the surface
@@ -179,9 +178,9 @@ class Dielectric(Material):
         unit_direction = F.normalize(r_in[:, :, 1], dim=1)  # Shape: [N, 3]
 
         # Attenuation is always (1, 1, 1) for dielectric materials
-        attenuation = torch.ones(N, 3, device=device)  # Shape: [N, 3]
+        attenuation = torch.ones(N, 3)  # Shape: [N, 3]
 
-        one = torch.tensor(1.0, device=device)
+        one = torch.tensor(1.0)
         refractive_indices = hit_record.refractive_index.unsqueeze(1)  # Shape: [N, 1]
         refraction_ratio = torch.where(
             front_face.unsqueeze(1),
@@ -196,7 +195,7 @@ class Dielectric(Material):
 
         # Generate random numbers to decide between reflection and refraction
         reflect_prob = reflectance(cos_theta, refraction_ratio)
-        random_numbers = torch.rand(N, 1, device=device)
+        random_numbers = torch.rand(N, 1)
         should_reflect = cannot_refract | (reflect_prob > random_numbers)
 
         # Compute reflected and refracted directions
@@ -208,6 +207,6 @@ class Dielectric(Material):
         new_rays = torch.stack([points, direction], dim=-1)
 
         # Scatter mask is always True for dielectric materials
-        scatter_mask = torch.ones(N, dtype=torch.bool, device=device)
+        scatter_mask = torch.ones(N, dtype=torch.bool)
 
         return scatter_mask, attenuation, new_rays

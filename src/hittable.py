@@ -48,16 +48,15 @@ class HitRecord:
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def empty(shape):
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        hit = torch.full(shape, False, dtype=torch.bool, device=device)
-        point = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
-        normal = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
-        t_values = torch.full(shape, inf, dtype=torch.float32, device=device)
-        front_face = torch.full(shape, False, dtype=torch.bool, device=device)
-        material_type = torch.full(shape, -1, dtype=torch.long, device=device)
-        albedo = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
-        fuzz = torch.zeros(shape, dtype=torch.float32, device=device)
-        refractive_index = torch.zeros(shape, dtype=torch.float32, device=device)
+        hit = torch.full(shape, False, dtype=torch.bool)
+        point = torch.zeros((*shape, 3), dtype=torch.float32)
+        normal = torch.zeros((*shape, 3), dtype=torch.float32)
+        t_values = torch.full(shape, inf, dtype=torch.float32)
+        front_face = torch.full(shape, False, dtype=torch.bool)
+        material_type = torch.full(shape, -1, dtype=torch.long)
+        albedo = torch.zeros((*shape, 3), dtype=torch.float32)
+        fuzz = torch.zeros(shape, dtype=torch.float32)
+        refractive_index = torch.zeros(shape, dtype=torch.float32)
         return HitRecord(
             hit, point, normal, t_values, front_face, material_type, albedo, fuzz, refractive_index
         )
@@ -94,11 +93,9 @@ class HittableList(Hittable):
         t_min: float,
         t_max: float,
     ) -> HitRecord:
-        from config import device
-
         N: int = pixel_rays.shape[0]
         record: HitRecord = HitRecord.empty((N,))
-        closest_so_far: Float[Tensor, 'N'] = torch.full((N,), t_max, device=device)
+        closest_so_far: Float[Tensor, 'N'] = torch.full((N,), t_max)
 
         for obj in self.objects:
             obj_record: HitRecord = obj.hit(pixel_rays, t_min, t_max)

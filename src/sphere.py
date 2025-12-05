@@ -6,7 +6,6 @@ from jaxtyping import Bool, Float, Int, jaxtyped
 from torch import Tensor
 from typeguard import typechecked as typechecker
 
-from config import device
 from hittable import HitRecord, Hittable
 from materials import Material
 
@@ -14,7 +13,7 @@ from materials import Material
 @jaxtyped(typechecker=typechecker)
 class Sphere(Hittable):
     def __init__(self, center: Float[Tensor, '3'], radius: float, material: Material):
-        self.center: Float[Tensor, '3'] = center.to(device)
+        self.center: Float[Tensor, '3'] = center
         self.radius: float = max(radius, 0.0)
         self.material: Material = material
 
@@ -40,13 +39,13 @@ class Sphere(Hittable):
         discriminant: Float[Tensor, 'N'] = b**2 - 4 * a * c
         sphere_hit: Bool[Tensor, 'N'] = discriminant >= 0
 
-        t_hit: Float[Tensor, 'N'] = torch.full((N,), inf, device=device)
-        sqrt_discriminant: Float[Tensor, 'N'] = torch.zeros(N, device=device)
+        t_hit: Float[Tensor, 'N'] = torch.full((N,), inf)
+        sqrt_discriminant: Float[Tensor, 'N'] = torch.zeros(N)
         sqrt_discriminant[sphere_hit] = torch.sqrt(discriminant[sphere_hit])
 
         # Compute roots
-        t0: Float[Tensor, 'N'] = torch.zeros(N, device=device)
-        t1: Float[Tensor, 'N'] = torch.zeros(N, device=device)
+        t0: Float[Tensor, 'N'] = torch.zeros(N)
+        t1: Float[Tensor, 'N'] = torch.zeros(N)
         denom: Float[Tensor, 'N'] = 2.0 * a
         t0[sphere_hit] = (-b[sphere_hit] - sqrt_discriminant[sphere_hit]) / denom[sphere_hit]
         t1[sphere_hit] = (-b[sphere_hit] + sqrt_discriminant[sphere_hit]) / denom[sphere_hit]
