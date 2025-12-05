@@ -1,13 +1,14 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-from jaxtyping import Float, Int, jaxtyped
+from jaxtyping import Float, Int
 from PIL import Image
 from torch import Tensor
-from typeguard import typechecked as typechecker
+
+from config import typed
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def tensor_to_image(tensor: Float[Tensor, 'h w c'] | Int[Tensor, 'h w c']) -> Image.Image:
     tensor = tensor.sqrt()  # gamma correction
     tensor = tensor.multiply(255).clamp(0, 255)
@@ -16,21 +17,21 @@ def tensor_to_image(tensor: Float[Tensor, 'h w c'] | Int[Tensor, 'h w c']) -> Im
     return image
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def random_unit_vector(shape: tuple[int, ...]) -> Float[Tensor, '... 3']:
     vec = torch.randn(*shape)
     vec = F.normalize(vec, dim=-1)
     return vec
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def random_on_hemisphere(normal: Float[Tensor, '... 3']) -> Float[Tensor, '... 3']:
     vec = random_unit_vector(normal.shape)
     dot_product = torch.sum(vec * normal, dim=-1, keepdim=True)
     return torch.where(dot_product > 0, vec, -vec)
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def background_color_gradient(sample: int, h: int, w: int) -> Float[Tensor, 'sample h w 3']:
     white: Float[Tensor, '3'] = torch.tensor([1.0, 1.0, 1.0])
     light_blue: Float[Tensor, '3'] = torch.tensor([0.5, 0.7, 1.0])
@@ -42,7 +43,7 @@ def background_color_gradient(sample: int, h: int, w: int) -> Float[Tensor, 'sam
     return background_colors
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 def random_in_unit_disk(shape: tuple[int, ...]) -> Float[Tensor, '... 2']:
     r: Float[Tensor, '...'] = torch.sqrt(torch.rand(*shape))
     theta: Float[Tensor, '...'] = torch.rand(*shape) * 2 * np.pi

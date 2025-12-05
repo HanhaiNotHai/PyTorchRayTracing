@@ -2,15 +2,15 @@ from math import inf
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Bool, Float, Int, jaxtyped
+from jaxtyping import Bool, Float, Int
 from torch import Tensor
-from typeguard import typechecked as typechecker
 
+from config import typed
 from hittable import HitRecord, Hittable
 from materials import Material
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Sphere(Hittable):
     def __init__(self, center: Float[Tensor, '3'], radius: float, material: Material):
         self.center: Float[Tensor, '3'] = center
@@ -163,6 +163,7 @@ class SphereList(Hittable):
         return record
 
 
+@typed
 class SphereInfo:
 
     def __init__(self):
@@ -173,6 +174,7 @@ class SphereInfo:
         self.fuzzes: list[float] = []
         self.refractive_indices: list[float] = []
 
+    @typed
     def add(
         self,
         sphere_center: list[float, float, float],

@@ -3,18 +3,18 @@ from math import inf
 
 import torch
 import torch.nn.functional as F
-from jaxtyping import Float, jaxtyped
+from jaxtyping import Float
 from PIL import Image
 from torch import Tensor
 from tqdm import tqdm
-from typeguard import typechecked as typechecker
 
+from config import typed
 from hittable import HitRecord, Hittable
 from materials import Dielectric, Lambertian, MaterialType, Metal
 from utils import random_in_unit_disk, tensor_to_image
 
 
-@jaxtyped(typechecker=typechecker)
+@typed
 class Camera:
     def __init__(
         self,
@@ -79,7 +79,7 @@ class Camera:
         self.pixel_delta_u = self.pixel_delta_u
         self.pixel_delta_v = self.pixel_delta_v
 
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def defocus_disk_sample(self, sample: int, h: int, w: int) -> Float[Tensor, 'sample h w 3']:
         p: Float[Tensor, 'sample h w 2'] = random_in_unit_disk((sample, h, w))
         offset = p[..., 0].unsqueeze(-1) * self.defocus_disk_u.view(1, 1, 1, 3) + p[
@@ -87,7 +87,7 @@ class Camera:
         ].unsqueeze(-1) * self.defocus_disk_v.view(1, 1, 1, 3)
         return self.look_from.view(1, 1, 1, 3) + offset
 
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def ray_color(
         self,
         pixel_rays: Float[Tensor, 'N 3 2'],
@@ -170,7 +170,7 @@ class Camera:
 
         return colors
 
-    @jaxtyped(typechecker=typechecker)
+    @typed
     def render(self, world: Hittable) -> Image.Image:
         sample: int = self.samples_per_pixel
         h, w = self.image_height, self.image_width
