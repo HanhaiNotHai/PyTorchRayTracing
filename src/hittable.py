@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+from math import inf
 from typing import List
 
-import torch as t
-from jaxtyping import Bool, Float, jaxtyped
+import torch
+from jaxtyping import Bool, Float, Int, jaxtyped
+from torch import Tensor
 from typeguard import typechecked as typechecker
 
 
@@ -10,7 +12,16 @@ from typeguard import typechecked as typechecker
 class HitRecord:
     @jaxtyped(typechecker=typechecker)
     def __init__(
-        self, hit, point, normal, t, front_face=None, material_type=None, albedo=None, fuzz=None, refractive_index=None
+        self,
+        hit: Bool[Tensor, '...'],
+        point: Float[Tensor, '... 3'],
+        normal: Float[Tensor, '... 3'],
+        t: Float[Tensor, '...'],
+        front_face: Bool[Tensor, '...'],
+        material_type: Int[Tensor, '...'],
+        albedo: Float[Tensor, '... 3'],
+        fuzz: Float[Tensor, '...'],
+        refractive_index: Float[Tensor, '...'],
     ):
         self.hit = hit
         self.point = point
@@ -25,38 +36,42 @@ class HitRecord:
     @jaxtyped(typechecker=typechecker)
     def set_face_normal(
         self,
-        ray_direction: Float[t.Tensor, "... 3"],
-        outward_normal: Float[t.Tensor, "... 3"],
+        ray_direction: Float[Tensor, '... 3'],
+        outward_normal: Float[Tensor, '... 3'],
     ) -> None:
-        """Determines whether the hit is from the outside or inside."""
-        self.front_face: Bool[t.Tensor, "..."] = (ray_direction * outward_normal).sum(dim=-1) < 0
-        self.normal: Float[t.Tensor, "... 3"] = t.where(self.front_face.unsqueeze(-1), outward_normal, -outward_normal)
+        '''Determines whether the hit is from the outside or inside.'''
+        self.front_face: Bool[Tensor, '...'] = (ray_direction * outward_normal).sum(dim=-1) < 0
+        self.normal: Float[Tensor, '... 3'] = torch.where(
+            self.front_face.unsqueeze(-1), outward_normal, -outward_normal
+        )
 
     @staticmethod
     @jaxtyped(typechecker=typechecker)
     def empty(shape):
-        device = t.device("cuda" if t.cuda.is_available() else "cpu")
-        hit = t.full(shape, False, dtype=t.bool, device=device)
-        point = t.zeros((*shape, 3), dtype=t.float32, device=device)
-        normal = t.zeros((*shape, 3), dtype=t.float32, device=device)
-        t_values = t.full(shape, float("inf"), dtype=t.float32, device=device)
-        front_face = t.full(shape, False, dtype=t.bool, device=device)
-        material_type = t.full(shape, -1, dtype=t.long, device=device)
-        albedo = t.zeros((*shape, 3), dtype=t.float32, device=device)
-        fuzz = t.zeros(shape, dtype=t.float32, device=device)
-        refractive_index = t.zeros(shape, dtype=t.float32, device=device)
-        return HitRecord(hit, point, normal, t_values, front_face, material_type, albedo, fuzz, refractive_index)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        hit = torch.full(shape, False, dtype=torch.bool, device=device)
+        point = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
+        normal = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
+        t_values = torch.full(shape, inf, dtype=torch.float32, device=device)
+        front_face = torch.full(shape, False, dtype=torch.bool, device=device)
+        material_type = torch.full(shape, -1, dtype=torch.long, device=device)
+        albedo = torch.zeros((*shape, 3), dtype=torch.float32, device=device)
+        fuzz = torch.zeros(shape, dtype=torch.float32, device=device)
+        refractive_index = torch.zeros(shape, dtype=torch.float32, device=device)
+        return HitRecord(
+            hit, point, normal, t_values, front_face, material_type, albedo, fuzz, refractive_index
+        )
 
 
 @jaxtyped(typechecker=typechecker)
 class Hittable(ABC):
-    """Abstract class for hittable objects."""
+    '''Abstract class for hittable objects.'''
 
     @abstractmethod
     @jaxtyped(typechecker=typechecker)
     def hit(
         self,
-        pixel_rays: Float[t.Tensor, "N 3 2"],
+        pixel_rays: Float[Tensor, 'N 3 2'],
         t_min: float,
         t_max: float,
     ) -> HitRecord:
@@ -65,7 +80,7 @@ class Hittable(ABC):
 
 @jaxtyped(typechecker=typechecker)
 class HittableList(Hittable):
-    """List of hittable objects."""
+    '''List of hittable objects.'''
 
     def __init__(self, objects: List[Hittable] = []):
         self.objects: List[Hittable] = objects
@@ -75,7 +90,7 @@ class HittableList(Hittable):
 
     def hit(
         self,
-        pixel_rays: Float[t.Tensor, "N 3 2"],
+        pixel_rays: Float[Tensor, 'N 3 2'],
         t_min: float,
         t_max: float,
     ) -> HitRecord:
@@ -83,18 +98,20 @@ class HittableList(Hittable):
 
         N: int = pixel_rays.shape[0]
         record: HitRecord = HitRecord.empty((N,))
-        closest_so_far: Float[t.Tensor, "N"] = t.full((N,), t_max, device=device)
+        closest_so_far: Float[Tensor, 'N'] = torch.full((N,), t_max, device=device)
 
         for obj in self.objects:
             obj_record: HitRecord = obj.hit(pixel_rays, t_min, t_max)
-            closer_mask: Bool[t.Tensor, "N"] = obj_record.hit & (obj_record.t < closest_so_far)
-            closest_so_far = t.where(closer_mask, obj_record.t, closest_so_far)
+            closer_mask: Bool[Tensor, 'N'] = obj_record.hit & (obj_record.t < closest_so_far)
+            closest_so_far = torch.where(closer_mask, obj_record.t, closest_so_far)
 
             record.hit = record.hit | obj_record.hit
-            record.point = t.where(closer_mask.unsqueeze(-1), obj_record.point, record.point)
-            record.normal = t.where(closer_mask.unsqueeze(-1), obj_record.normal, record.normal)
-            record.t = t.where(closer_mask, obj_record.t, record.t)
-            record.front_face = t.where(closer_mask, obj_record.front_face, record.front_face)
+            record.point = torch.where(closer_mask.unsqueeze(-1), obj_record.point, record.point)
+            record.normal = torch.where(
+                closer_mask.unsqueeze(-1), obj_record.normal, record.normal
+            )
+            record.t = torch.where(closer_mask, obj_record.t, record.t)
+            record.front_face = torch.where(closer_mask, obj_record.front_face, record.front_face)
 
             # Update materials
             indices = closer_mask.nonzero(as_tuple=False).squeeze(-1)
